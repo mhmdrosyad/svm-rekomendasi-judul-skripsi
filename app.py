@@ -2,6 +2,7 @@ import numpy as np
 from flask import Flask, render_template, request, url_for, redirect, session, flash
 import pymysql.cursors
 import bcrypt
+from model_svm import predict_with_svm, X_train, Y_train, a, b
 
 app = Flask(__name__)
 
@@ -68,11 +69,17 @@ def register():
 def predict():
     if 'username' in session:
         if request.method == 'POST':
-            input_data = request.form['input_data']
-            # float_features = [float(x) for x in input_data.split()]
-            # feature = [np.array(float_features)]
-            # prediction = model.predict(feature)
-            # return render_template("index.html", prediction_text="Hasil Rekomendasi: {}".format(prediction[0]))
+            SPK = int(request.form.get('SPK', 0))
+            DATA_MINING = int(request.form.get('DATA_MINING', 0))
+            PEMROG = int(request.form.get('PEMROG', 0))
+            MACHINE = int(request.form.get('MACHINE', 0))
+
+            data_nilai = np.array([[SPK, DATA_MINING, PEMROG, MACHINE]])
+            prediksi_user = predict_with_svm(X_train, Y_train, data_nilai, a, b)
+            kategori = {1: 'DATA MINING', -1: 'RPL'}
+            hasil_prediksi = kategori.get(prediksi_user[0])
+            print(hasil_prediksi)
+            return render_template("index.html", data=hasil_prediksi)
         return render_template("index.html")
     return render_template("login.html")
 

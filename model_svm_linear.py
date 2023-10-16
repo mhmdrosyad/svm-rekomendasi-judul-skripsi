@@ -47,24 +47,19 @@ b = 0
 
 # Parameter pembelajaran
 C = 1
-lambda_val = 0.5
 
-# Definisi fungsi kernel RBF
-def rbf_kernel(x1, x2, gamma=0.1):
-    return np.exp(-gamma * np.linalg.norm(x1 - x2)**2)
-
-# Menghitung matriks Hessian dengan kernel RBF
+# Menghitung matriks Hessian dengan kernel linear
 Hessian = np.zeros((X.shape[0], X.shape[0]))
 for i in range(X.shape[0]):
     for j in range(X.shape[0]):
-        Hessian[i][j] = Y[i] * Y[j] * rbf_kernel(X[i], X[j])
+        Hessian[i][j] = Y[i] * Y[j] * np.dot(X[i], X[j])
 
-# Proses pelatihan SVM dengan kernel RBF
+# Proses pelatihan SVM dengan kernel linear
 for epoch in range(100):
     for i in range(X.shape[0]):
         Ei = np.dot(a * Y, Hessian[i]) + b - Y[i]
         if (Y[i] * Ei < -0.01 and a[i] < C) or (Y[i] * Ei > 0.01 and a[i] > 0):
-            # Pilih indeks acak j Yang berbeda dengan i
+            # Pilih indeks acak j yang berbeda dengan i
             j = i
             while j == i:
                 j = np.random.randint(0, X.shape[0])
@@ -87,10 +82,7 @@ for epoch in range(100):
                 continue
 
             # Hitung nilai baru untuk aj
-            eta = 2 * rbf_kernel(X[i], X[j]) - rbf_kernel(X[i], X[i]) - rbf_kernel(X[j], X[j])
-            if eta >= 0:
-                continue
-            aj_new = aj_old - Y[j] * (Ei - Ej) / eta
+            aj_new = aj_old - Y[j] * (Ei - Ej)
             aj_new = max(L, min(H, aj_new))
 
             if np.abs(aj_new - aj_old) < 0.00001:
@@ -100,8 +92,8 @@ for epoch in range(100):
             ai_new = ai_old + Y[i] * Y[j] * (aj_old - aj_new)
 
             # Hitung b
-            bi_new = b - Ei - Y[i] * (ai_new - ai_old) * rbf_kernel(X[i], X[i]) - Y[j] * (aj_new - aj_old) * rbf_kernel(X[i], X[j])
-            bj_new = b - Ej - Y[i] * (ai_new - ai_old) * rbf_kernel(X[i], X[j]) - Y[j] * (aj_new - aj_old) * rbf_kernel(X[j], X[j])
+            bi_new = b - Ei - Y[i] * (ai_new - ai_old) * np.dot(X[i], X[i]) - Y[j] * (aj_new - aj_old) * np.dot(X[i], X[j])
+            bj_new = b - Ej - Y[i] * (ai_new - ai_old) * np.dot(X[i], X[j]) - Y[j] * (aj_new - aj_old) * np.dot(X[j], X[j])
 
             if 0 < ai_new < C:
                 b = bi_new
@@ -113,6 +105,7 @@ for epoch in range(100):
             # Update nilai a
             a[i] = ai_new
             a[j] = aj_new
+
 
 # Data uji
 # X_test = np.array([
@@ -135,7 +128,7 @@ for epoch in range(100):
 def predict_with_svm(X_train, Y_train, X_test, a, b):
     predictions = []
     for i in range(X_test.shape[0]):
-        f_x = np.dot(a * Y_train, np.array([rbf_kernel(X_train[j], X_test[i]) for j in range(X_train.shape[0])])) + b
+        f_x = np.dot(a * Y_train, np.array([np.dot(X_train[j], X_test[i]) for j in range(X_train.shape[0])])) + b
         if f_x > 0:
             predictions.append(1)
         else:
@@ -164,12 +157,12 @@ print("Akurasi menggunakan data test: {:.2f}%".format(akurasi))
 
 #kategori
 
-# kategori = {1: 'DATA MINING', -1: 'RPL'}
+kategori = {1: 'DATA MINING', -1: 'RPL'}
 
-# #data uji user
-# input_user = np.array([[85, 0, 85, 0]])
+#data uji user
+input_user = np.array([[85, 0, 85, 0]])
 
-# prediksi_user = predict_with_svm(X_train, Y_train, input_user, a, b)
-# hasil_prediksi = kategori.get(prediksi_user[0])
+prediksi_user = predict_with_svm(X_train, Y_train, input_user, a, b)
+hasil_prediksi = kategori.get(prediksi_user[0])
 
-# print(f"Hasil prediksi user: {hasil_prediksi}")
+print(f"Hasil prediksi user: {hasil_prediksi}")
